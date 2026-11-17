@@ -1,0 +1,97 @@
+# Full-scale configuration used for the paper.
+data:
+  train_parquet: data/train.parquet        # FreshRetailNet-50K train split (90 days)
+  n_stores: 200                            # stores sampled for E2/E3
+  store_seed: 2026
+  ground_truth: [A, B]
+  hourly_profile_row_groups: 300
+
+e1:                                        # synthetic experiment
+  dists: [normal, lognormal]
+  cvs: [0.2, 0.4, 0.8]
+  taus: [0.5, 0.75, 0.9]
+  starts: [0.7, 1.0, 1.3]
+  learners: [PAR, SAA, TOB, KM, KMX]
+  kmx_eps: 0.05
+  reps: 100
+  horizon: 364
+  window: 56
+  refit: 7
+  last: 112
+  seed: 2026
+  n_jobs: -1                               # parallel cells (-1 = all cores)
+
+e2:                                        # real-data closed loop
+  learners: [MSE, QNT, AFT]
+  taus: [0.5, 0.75, 0.9]
+  refit: [7]
+  seeds: [0, 1, 2, 3, 4]
+  robustness:                              # daily refit, run on a subset only (costly)
+    refit: [1]
+    taus: [0.9]
+    ground_truth: [A]
+    seeds: [0]
+  warm: 28
+  n_jobs: 2                                # parallel jobs; each job uses xgb_nthread threads
+  xgb:
+    num_boost_round: 200
+    max_depth: 5
+    eta: 0.08
+    subsample: 0.8
+    colsample_bytree: 0.9
+    min_child_weight: 5
+    nthread: 4
+    aft_scale: 0.6
+
+e3:                                        # survival analysis on E2 outputs
+  ground_truth: A
+  refit: 7
+  fail_threshold: 0.90
+  escape_threshold: 0.95
+  threshold_sensitivity: [0.85, 0.95]
+
+e1x:                                       # additional synthetic experiments (step 7)
+  reps: 100
+  horizon: 364
+  last: 112
+  kmx_eps: 0.05
+  seed: 2027
+  n_jobs: -1
+  sensitivity:                             # one factor at a time around W = 56, R = 7
+    dists: [normal, lognormal]
+    cvs: [0.4]
+    taus: [0.5, 0.75, 0.9]
+    starts: [0.7, 1.0]
+    learners: [PAR, SAA, TOB, KM, KMX]
+    base_window: 56
+    base_refit: 7
+    windows: [28, 56, 112]
+    refits: [1, 7, 14]
+  exploration:
+    dists: [normal, lognormal]
+    cvs: [0.2, 0.4, 0.8]
+    taus: [0.5, 0.75, 0.9]
+    starts: [0.7, 1.0]
+    eps: [0.02, 0.05, 0.1, 0.2]
+
+e2x:                                       # exploration on the real data (step 8)
+  learners: ["QNTX:0.05", "QNTX:0.1", "QNTX:0.2", "MSEX:0.1"]
+  ground_truth: [A]
+  taus: [0.5, 0.75, 0.9]
+  refit: 7
+  seeds: [0, 1, 2, 3, 4]
+
+e2h:                                       # hyperparameter sensitivity (step 9), one change at a time
+  ground_truth: [A]
+  taus: [0.5, 0.9]
+  refit: 7
+  seeds: [0]
+  variants:
+    trees_100: {num_boost_round: 100}
+    trees_400: {num_boost_round: 400}
+    depth_3: {max_depth: 3}
+    depth_8: {max_depth: 8}
+    eta_0.04: {eta: 0.04}
+    eta_0.16: {eta: 0.16}
+
+output_dir: results

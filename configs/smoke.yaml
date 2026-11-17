@@ -1,0 +1,93 @@
+# Small configuration to check the installation end to end (about 10 minutes on a laptop).
+data:
+  train_parquet: data/train.parquet
+  n_stores: 6
+  store_seed: 2026
+  ground_truth: [A, B]
+  hourly_profile_row_groups: 30
+
+e1:
+  dists: [normal, lognormal]
+  cvs: [0.4]
+  taus: [0.5, 0.9]
+  starts: [0.7, 1.3]
+  learners: [PAR, SAA, TOB, KM, KMX]
+  kmx_eps: 0.05
+  reps: 20
+  horizon: 182
+  window: 56
+  refit: 7
+  last: 56
+  seed: 2026
+  n_jobs: 2
+
+e2:
+  learners: [MSE, QNT, AFT]
+  taus: [0.5, 0.9]
+  refit: [7]
+  seeds: [0, 1]
+  robustness:
+    refit: [1]
+    taus: [0.9]
+    ground_truth: [A]
+    seeds: [0]
+  warm: 28
+  n_jobs: 2
+  xgb:
+    num_boost_round: 60
+    max_depth: 4
+    eta: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.9
+    min_child_weight: 5
+    nthread: 2
+    aft_scale: 0.6
+
+e3:
+  ground_truth: A
+  refit: 7
+  fail_threshold: 0.90
+  escape_threshold: 0.95
+  threshold_sensitivity: [0.85, 0.95]
+
+e1x:
+  reps: 20
+  horizon: 182
+  last: 56
+  kmx_eps: 0.05
+  seed: 2027
+  n_jobs: 2
+  sensitivity:
+    dists: [normal]
+    cvs: [0.4]
+    taus: [0.5, 0.9]
+    starts: [0.7]
+    learners: [PAR, SAA, TOB, KM, KMX]
+    base_window: 56
+    base_refit: 7
+    windows: [28, 56]
+    refits: [7, 14]
+  exploration:
+    dists: [normal]
+    cvs: [0.4]
+    taus: [0.5, 0.9]
+    starts: [0.7]
+    eps: [0.05, 0.2]
+
+e2x:
+  learners: ["QNTX:0.1", "MSEX:0.1"]
+  ground_truth: [A]
+  taus: [0.5, 0.9]
+  refit: 7
+  seeds: [0, 1]
+
+e2h:
+  ground_truth: [A]
+  taus: [0.5, 0.9]
+  refit: 7
+  seeds: [0]
+  variants:
+    depth_3: {max_depth: 3}
+    eta_0.2: {eta: 0.2}
+
+output_dir: results_smoke
